@@ -4,9 +4,18 @@ from sklearn.discriminant_analysis import (
     LinearDiscriminantAnalysis,
     QuadraticDiscriminantAnalysis,
 )
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import (
+    LogisticRegression,
+    LinearRegression,
+    Ridge,
+    Lasso,
+    ElasticNet,
+)
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import Pipeline
+from sklearn.decomposition import PCA
+from sklearn.cross_decomposition import PLSRegression
 
 
 class DM:
@@ -34,6 +43,43 @@ class DM:
                 "model": DecisionTreeClassifier(),
                 "param": {},
                 "type": "classification",
+            },
+            "LinearRegression": {
+                "model": LinearRegression(),
+                "param": {},
+                "type": "regression",
+            },
+            "Ridge": {
+                "model": Ridge(),
+                "param": {"alpha": [1e-8, 0.0001, 0.001, 0.01, 0.1, 1, 10]},
+                "type": "regression",
+            },
+            "LASSO": {
+                "model": Lasso(),
+                "param": {"alpha": [1e-8, 0.0001, 0.001, 0.01, 0.1, 1, 10]},
+                "type": "regression",
+            },
+            "ElasticNet": {
+                "model": ElasticNet(),
+                "param": {
+                    "alpha": [1e-8, 0.0001, 0.001, 0.01, 0.1, 1, 10],
+                    "l1_ratio": [0.3, 0.5, 0.7],
+                },
+                "type": "regression",
+            },
+            "PLS": {
+                "model": PLSRegression(),
+                "param": {"n_components": list(range(1, self.num_features))},
+                "type": "regression",
+            },
+            "PCR": {
+                "model": Pipeline(
+                    steps=[("pca", PCA()), ("regression", LinearRegression())]
+                ),
+                "param": {
+                    "pca__n_components": [None] + list(range(1, self.num_features))
+                },
+                "type": "regression",
             },
         }
 
