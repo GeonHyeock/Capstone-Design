@@ -1,15 +1,15 @@
 import pandas as pd
 import numpy as np
-from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.discriminant_analysis import (
+    LinearDiscriminantAnalysis,
+    QuadraticDiscriminantAnalysis,
+)
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GridSearchCV
-from sklearn.model_selection import KFold
 
 
 class DM:
-    ## TODO : LDA & QDA & RDA
-    ## TODO : Logistic Regression
-    ## TODO : SVM
-    ## TODO : TREE
     def __init__(self, data_path="data/Expanded_data_with_more_features.csv"):
         data = preprocessing(data_path, "classification")
         self.train_data, self.test_data = data
@@ -17,25 +17,45 @@ class DM:
         self.models = {
             "LDA": {
                 "model": LinearDiscriminantAnalysis(),
-                "param": {"tol": [0.001, 0.0001, 0.00001]},
+                "param": {},
                 "type": "classification",
             },
-            "QDA": {},
+            "QDA": {
+                "model": QuadraticDiscriminantAnalysis(),
+                "param": {"reg_param": [0.2 * i for i in range(5)]},
+                "type": "classification",
+            },
+            "Logistic Regression": {
+                "model": LogisticRegression(),
+                "param": {},
+                "type": "classification",
+            },
+            "Tree": {
+                "model": DecisionTreeClassifier(),
+                "param": {},
+                "type": "classification",
+            },
         }
 
     def kfold_grid_serch(self, model, param, type="classification"):
-        grid = GridSearchCV(model, param, cv=5, return_train_score=True)
         target = "MathGrade" if type == "classification" else "MathScore"
-        grid.fit(
-            self.train_data.drop(["MathGrade", "MathScore"], axis=1),
-            self.train_data[target],
-        )
-
-        return {
-            "model": grid.best_estimator_,
-            "best_param": grid.best_params_,
-            "cv_result": grid.cv_results_,
-        }
+        if param:
+            grid = GridSearchCV(model, param, cv=5, return_train_score=True)
+            grid.fit(
+                self.train_data.drop(["MathGrade", "MathScore"], axis=1),
+                self.train_data[target],
+            )
+            return {
+                "model": grid.best_estimator_,
+                "best_param": grid.best_params_,
+                "cv_result": grid.cv_results_,
+            }
+        else:
+            model.fit(
+                self.train_data.drop(["MathGrade", "MathScore"], axis=1),
+                self.train_data[target],
+            )
+            return {"model": model}
 
 
 def preprocessing(data_path, data_mode):
