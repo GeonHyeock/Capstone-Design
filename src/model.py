@@ -62,7 +62,7 @@ def preprocessing(data_path, data_mode):
     """
     1. 결측치 제거
 
-    2. 수치 변환
+    2. 변수 변환
      a) Gender : male : 0, female : 1
      b) EthnicGroup : 더미화 5그룹
      c) ParentEduc : 더미화 6그룹
@@ -73,6 +73,7 @@ def preprocessing(data_path, data_mode):
      h) IsFirstChild : yes : 0, no = 1
      i) TransportMeans: school_bus : 0, private : 1
      j) WklyStudyHours : 더미화 3그룹
+     k) 수치형 데이터 정규화
 
     3. train, test 분할 (8:2)
     Returns:
@@ -129,7 +130,14 @@ def preprocessing(data_path, data_mode):
     )
 
     train_data = data.sample(frac=0.8, random_state=42)
+    train_numeric = train_data.loc[:, ["ReadingScore", "WritingScore"]]
+    mean = train_numeric.mean()
+    std = train_numeric.std(ddof=1)
+    train_data.loc[:, ["ReadingScore", "WritingScore"]] = (train_numeric - mean) / std
+
     test_data = data.drop(train_data.index)
+    test_numeric = test_data.loc[:, ["ReadingScore", "WritingScore"]]
+    test_data.loc[:, ["ReadingScore", "WritingScore"]] = (test_numeric - mean) / std
     return train_data, test_data
 
 
