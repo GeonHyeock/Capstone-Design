@@ -17,11 +17,13 @@ from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
 from sklearn.cross_decomposition import PLSRegression
 
+from sklearn.feature_selection import SelectFromModel
+
 
 class DM:
     def __init__(self, data_path="data/Expanded_data_with_more_features.csv"):
-        data = preprocessing(data_path, "classification")
-        self.train_data, self.test_data = data
+        self.train_data, self.test_data = preprocessing(data_path, "classification")
+        self.num_features = len(self.train_data.columns) - 1
 
         self.models = {
             "LDA": {
@@ -102,6 +104,13 @@ class DM:
                 self.train_data[target],
             )
             return {"model": model}
+
+
+def best_subset_selection(model, X, y):
+    selector = SelectFromModel(estimator=model, threshold="median")
+    n_features = selector.transform(X)
+    selected_features = list(X.columns[selector.get_support()])
+    print(f"{n_features}개의 feature가 선택됨")
 
 
 def preprocessing(data_path, data_mode):
