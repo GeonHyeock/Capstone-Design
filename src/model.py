@@ -106,11 +106,34 @@ class DM:
             return {"model": model}
 
 
-def best_subset_selection(model, X, y):
-    selector = SelectFromModel(estimator=model, threshold="median")
-    n_features = selector.transform(X)
-    selected_features = list(X.columns[selector.get_support()])
-    print(f"{n_features}개의 feature가 선택됨")
+def best_subset_selection(model, data_path, type):
+    # data
+    train, test = preprocessing(data_path, "classification")
+    target = "MathGrade" if type == "classification" else "MathScore"
+
+    features_name = [
+        col for col in train.columns if col not in ["MathGrade", "MathScore"]
+    ]
+
+    X_train = train[features_name].to_numpy()
+    y_train = train[target].to_numpy()
+
+    selector = SelectFromModel(estimator=model, threshold="median").fit(
+        X_train, y_train
+    )
+
+    try:
+        selected_features = list(np.array(features_name)[selector.get_support()])
+    except ValueError as e:
+        print("해당 모델은 개별 특성의 중요도를 직접 추정할 수 없습니다.")
+        return None
+
+    n_features = len(selected_features)
+
+    print(f"{n_features} features are selected.")
+    print(f"Selected features : {selected_features}")
+
+    return n_features, selected_features
 
 
 def preprocessing(data_path, data_mode):
@@ -198,4 +221,7 @@ def preprocessing(data_path, data_mode):
 
 if __name__ == "__main__":
     A = DM()
-    A.kfold_grid_serch(**A.models["LDA"])
+    # A.kfold_grid_serch(**A.models["LDA"])
+    model = QuadraticDiscriminantAnalysis()
+    data_path = "data/Expanded_data_with_more_features.csv"
+    best_subset_selection(model, data_path, type="classification")
