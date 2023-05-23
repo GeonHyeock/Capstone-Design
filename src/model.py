@@ -16,34 +16,59 @@ from sklearn.model_selection import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.decomposition import PCA
 from sklearn.cross_decomposition import PLSRegression
+from sklearn.svm import SVC
 
 from sklearn.feature_selection import SelectFromModel
+
+import time
+import warnings
+
+warnings.filterwarnings(action="ignore")
 
 
 class DM:
     def __init__(self, data_path="data/Expanded_data_with_more_features.csv"):
+        # variables이 서로 선형관계를 띄고 있어서 UserWarning:Variables are collinear발생
         self.train_data, self.test_data = preprocessing(data_path, "classification")
         self.num_features = len(self.train_data.columns) - 1
 
         self.models = {
             "LDA": {
                 "model": LinearDiscriminantAnalysis(),
-                "param": {},
+                "param": {"solver": ["svd", "lsqr", "eigen"]},
                 "type": "classification",
             },
             "QDA": {
                 "model": QuadraticDiscriminantAnalysis(),
-                "param": {"reg_param": [0.2 * i for i in range(5)]},
+                "param": {"reg_param": list(np.linspace(0.0, 1.0, 11, endpoint=True))},
                 "type": "classification",
             },
             "Logistic Regression": {
                 "model": LogisticRegression(),
-                "param": {},
+                "param": {
+                    "penalty": ["l1", "l2", "elasticnet", "none"],
+                    "C": list(np.logspace(-4, 4, 20)),
+                    "solver": ["lbfgs", "newton-cg", "liblinear", "sag", "saga"],
+                },
                 "type": "classification",
             },
             "Tree": {
                 "model": DecisionTreeClassifier(),
-                "param": {},
+                "param": {
+                    "max_depth": [3, 5, 7, 10, 15],
+                    "min_samples_leaf": [3, 5, 10, 15, 20],
+                    "min_samples_split": [8, 10, 12, 18, 20, 16],
+                    "criterion": ["gini", "entropy"],
+                },
+                "type": "classification",
+            },
+            "SVC": {
+                "model": SVC(),
+                "param": {
+                    "C": [0.1, 1, 10, 100],
+                    "gamma": [1, 0.1, 0.01, 0.001],
+                    "kernel": ["rbf", "poly", "sigmoid"],
+                },
                 "type": "classification",
             },
             "LinearRegression": {
@@ -53,34 +78,32 @@ class DM:
             },
             "Ridge": {
                 "model": Ridge(),
-                "param": {"alpha": [1e-8, 0.0001, 0.001, 0.01, 0.1, 1, 10]},
+                "param": {"alpha": list(np.arange(0, 1, 0.01))},
                 "type": "regression",
             },
             "LASSO": {
                 "model": Lasso(),
-                "param": {"alpha": [1e-8, 0.0001, 0.001, 0.01, 0.1, 1, 10]},
+                "param": {"alpha": list(np.arange(0, 1, 0.01))},
                 "type": "regression",
             },
             "ElasticNet": {
                 "model": ElasticNet(),
                 "param": {
-                    "alpha": [1e-8, 0.0001, 0.001, 0.01, 0.1, 1, 10],
-                    "l1_ratio": [0.3, 0.5, 0.7],
+                    "alpha": [1e-4, 1e-3, 1e-2, 1e-1, 0.0, 1.0, 10.0, 100.0],
+                    "l1_ratio": list(np.arange(0, 1, 0.01)),
                 },
                 "type": "regression",
             },
             "PLS": {
                 "model": PLSRegression(),
-                "param": {"n_components": list(range(1, self.num_features))},
+                "param": {"n_components": list(range(1, 10))},
                 "type": "regression",
             },
             "PCR": {
                 "model": Pipeline(
                     steps=[("pca", PCA()), ("regression", LinearRegression())]
                 ),
-                "param": {
-                    "pca__n_components": [None] + list(range(1, self.num_features))
-                },
+                "param": {"n_components": list(range(1, 10))},
                 "type": "regression",
             },
         }
@@ -88,6 +111,7 @@ class DM:
     def kfold_grid_serch(self, model, param, type="classification"):
         target = "MathGrade" if type == "classification" else "MathScore"
         if param:
+            # max_iter가 충분하지 않아 결과가 수렴하지 않아서 ConvergenceWarning 발생
             grid = GridSearchCV(model, param, cv=5, return_train_score=True)
             grid.fit(
                 self.train_data.drop(["MathGrade", "MathScore"], axis=1),
@@ -221,7 +245,13 @@ def preprocessing(data_path, data_mode):
 
 if __name__ == "__main__":
     A = DM()
-    # A.kfold_grid_serch(**A.models["LDA"])
-    model = QuadraticDiscriminantAnalysis()
-    data_path = "data/Expanded_data_with_more_features.csv"
-    best_subset_selection(model, data_path, type="classification")
+    d = A.kfold_grid_serch(**A.models["LDA"])
+    start = time.time()
+    for k in A.models.keys():
+        A.kfold_grid_serch(**A.models[k])
+    end = time.time()
+
+    print(f"{end - start:.5f} sec")
+    # model = QuadraticDiscriminantAnalysis()
+    # data_path = "data/Expanded_data_with_more_features.csv"
+    # best_subset_selection(model, data_path, type="classification")
