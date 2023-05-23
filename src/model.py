@@ -138,17 +138,11 @@ def preprocessing(data_path):
     1. 결측치 제거
 
     2. 변수 변환
-     a) Gender : male : 0, female : 1
-     b) EthnicGroup : 더미화 5그룹
-     c) ParentEduc : 더미화 6그룹
-     d) LunchType : standard : 0, free/reduced : 1
-     e) TestPrep : none : 0, completed : 1
-     f) ParentMaritalStatus : 더미화 4그룹
-     g) PracticeSport : 더미화 3그룹
-     h) WklyStudyHours : 더미화 3그룹
-     i) 수치형 데이터 정규화
-     j) IsFirstChild, NrSiblings, TransportMeans 변수 제거 (by ttest)
-     k) WritingScore 변수 제거 (다중 공선성)
+     a) Gender, EthnicGroup, ParentEduc, LunchType, TestPrep, ParentMaritalStatus,
+        PracticeSport, WklyStudyHours : 더미화
+     b) IsFirstChild, NrSiblings, TransportMeans 변수 제거 (by ttest)
+     c) WritingScore 변수 제거 (다중 공선성)
+     d) 수치형 데이터 정규화
 
     3. train, test 분할 (8:2)
     Returns:
