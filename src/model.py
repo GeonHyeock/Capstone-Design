@@ -22,7 +22,7 @@ from sklearn.feature_selection import SelectFromModel
 
 class DM:
     def __init__(self, data_path="data/Expanded_data_with_more_features.csv"):
-        self.train_data, self.test_data = preprocessing(data_path, "classification")
+        self.train_data, self.test_data = preprocessing(data_path)
         self.num_features = len(self.train_data.columns) - 1
 
         self.models = {
@@ -105,38 +105,35 @@ class DM:
             )
             return {"model": model}
 
+    def best_subset_selection(self, model, type):
+        target = "MathGrade" if type == "classification" else "MathScore"
 
-def best_subset_selection(model, data_path, type):
-    # data
-    train, test = preprocessing(data_path, "classification")
-    target = "MathGrade" if type == "classification" else "MathScore"
+        features_name = [
+            col for col in self.train.columns if col not in ["MathGrade", "MathScore"]
+        ]
 
-    features_name = [
-        col for col in train.columns if col not in ["MathGrade", "MathScore"]
-    ]
+        X_train = self.train[features_name].to_numpy()
+        y_train = self.train[target].to_numpy()
 
-    X_train = train[features_name].to_numpy()
-    y_train = train[target].to_numpy()
+        selector = SelectFromModel(estimator=model, threshold="median").fit(
+            X_train, y_train
+        )
 
-    selector = SelectFromModel(estimator=model, threshold="median").fit(
-        X_train, y_train
-    )
+        try:
+            selected_features = list(np.array(features_name)[selector.get_support()])
+        except ValueError as e:
+            print(f"{model} 해당 모델은 개별 특성의 중요도를 직접 추정할 수 없습니다.")
+            return None
 
-    try:
-        selected_features = list(np.array(features_name)[selector.get_support()])
-    except ValueError as e:
-        print("해당 모델은 개별 특성의 중요도를 직접 추정할 수 없습니다.")
-        return None
+        n_features = len(selected_features)
 
-    n_features = len(selected_features)
+        print(f"{n_features} features are selected.")
+        print(f"Selected features : {selected_features}")
 
-    print(f"{n_features} features are selected.")
-    print(f"Selected features : {selected_features}")
-
-    return n_features, selected_features
+        return n_features, selected_features
 
 
-def preprocessing(data_path, data_mode):
+def preprocessing(data_path):
     """
     1. 결측치 제거
 
@@ -148,10 +145,10 @@ def preprocessing(data_path, data_mode):
      e) TestPrep : none : 0, completed : 1
      f) ParentMaritalStatus : 더미화 4그룹
      g) PracticeSport : 더미화 3그룹
-     h) IsFirstChild : yes : 0, no = 1
-     i) TransportMeans: school_bus : 0, private : 1
-     j) WklyStudyHours : 더미화 3그룹
-     k) 수치형 데이터 정규화
+     h) WklyStudyHours : 더미화 3그룹
+     i) 수치형 데이터 정규화
+     j) IsFirstChild, NrSiblings, TransportMeans 변수 제거 (by ttest)
+     k) WritingScore 변수 제거 (다중 공선성)
 
     3. train, test 분할 (8:2)
     Returns:
@@ -161,15 +158,13 @@ def preprocessing(data_path, data_mode):
     data.dropna(inplace=True)  # 11398 삭제
     data.reset_index(drop=True, inplace=True)
 
-    if data_mode == "classification":
-        data["MathGrade"] = pd.cut(
-            data.MathScore,
-            data.MathScore.quantile(
-                [0, 0.04, 0.11, 0.23, 0.40, 0.60, 0.88, 0.89, 0.96, 1]
-            ),
-            labels=[f"{i}" for i in range(9, 0, -1)],
-        )
-        data["MathGrade"] = data["MathGrade"].fillna("9")
+    data["MathGrade"] = pd.cut(
+        data.MathScore,
+        data.MathScore.quantile([0, 0.04, 0.11, 0.23, 0.40, 0.60, 0.88, 0.89, 0.96, 1]),
+        labels=[f"{i}" for i in range(9, 0, -1)],
+    )
+
+    data["MathGrade"] = data["MathGrade"].fillna("9")
 
     data.Gender = np.where(data.Gender == "male", 0.0, 1)
 
@@ -187,10 +182,6 @@ def preprocessing(data_path, data_mode):
 
     data = pd.concat([data, pd.get_dummies(data.PracticeSport, prefix="sport")], axis=1)
 
-    data.IsFirstChild = np.where(data.IsFirstChild == "yes", 0.0, 1)
-
-    data.TransportMeans = np.where(data.TransportMeans == "school_bus", 0.0, 1)
-
     data = pd.concat(
         [data, pd.get_dummies(data.WklyStudyHours, prefix="study")], axis=1
     )
@@ -202,6 +193,10 @@ def preprocessing(data_path, data_mode):
             "ParentMaritalStatus",
             "PracticeSport",
             "WklyStudyHours",
+            "IsFirstChild",
+            "NrSiblings",
+            "TransportMeans",
+            "WritingScore",
         ],
         axis=1,
         inplace=True,
@@ -224,4 +219,4 @@ if __name__ == "__main__":
     # A.kfold_grid_serch(**A.models["LDA"])
     model = QuadraticDiscriminantAnalysis()
     data_path = "data/Expanded_data_with_more_features.csv"
-    best_subset_selection(model, data_path, type="classification")
+    A.best_subset_selection(model, data_path, type="classification")
