@@ -154,6 +154,12 @@ def preprocessing(data_path):
     Returns:
         data_path: 데이터 주소
     """
+
+    def dummy(Data, col):
+        Data = pd.concat([Data, pd.get_dummies(data[col], prefix=col[:3])], axis=1)
+        Data.drop(col, axis=1, inplace=True)
+        return Data
+
     data = pd.read_csv(data_path, index_col=0)
     data.dropna(inplace=True)  # 11398 삭제
     data.reset_index(drop=True, inplace=True)
@@ -166,51 +172,33 @@ def preprocessing(data_path):
 
     data["MathGrade"] = data["MathGrade"].fillna("9")
 
-    data.Gender = np.where(data.Gender == "male", 0.0, 1)
-
-    data = pd.concat([data, pd.get_dummies(data.EthnicGroup, prefix="Ethnic")], axis=1)
-
-    data = pd.concat([data, pd.get_dummies(data.ParentEduc, prefix="Educ")], axis=1)
-
-    data.LunchType = np.where(data.LunchType == "standard", 0.0, 1)
-
-    data.TestPrep = np.where(data.TestPrep == "none", 0.0, 1)
-
-    data = pd.concat(
-        [data, pd.get_dummies(data.ParentMaritalStatus, prefix="PM")], axis=1
-    )
-
-    data = pd.concat([data, pd.get_dummies(data.PracticeSport, prefix="sport")], axis=1)
-
-    data = pd.concat(
-        [data, pd.get_dummies(data.WklyStudyHours, prefix="study")], axis=1
-    )
+    for col in [
+        "Gender",
+        "EthnicGroup",
+        "ParentEduc",
+        "LunchType",
+        "TestPrep",
+        "ParentMaritalStatus",
+        "PracticeSport",
+        "WklyStudyHours",
+    ]:
+        data = dummy(data, col)
 
     data.drop(
-        [
-            "EthnicGroup",
-            "ParentEduc",
-            "ParentMaritalStatus",
-            "PracticeSport",
-            "WklyStudyHours",
-            "IsFirstChild",
-            "NrSiblings",
-            "TransportMeans",
-            "WritingScore",
-        ],
+        ["WritingScore", "IsFirstChild", "NrSiblings", "TransportMeans"],
         axis=1,
         inplace=True,
     )
 
     train_data = data.sample(frac=0.8, random_state=42)
-    train_numeric = train_data.loc[:, ["ReadingScore", "WritingScore"]]
+    train_numeric = train_data.loc[:, ["ReadingScore"]]
     mean = train_numeric.mean()
     std = train_numeric.std(ddof=1)
-    train_data.loc[:, ["ReadingScore", "WritingScore"]] = (train_numeric - mean) / std
+    train_data.loc[:, ["ReadingScore"]] = (train_numeric - mean) / std
 
     test_data = data.drop(train_data.index)
-    test_numeric = test_data.loc[:, ["ReadingScore", "WritingScore"]]
-    test_data.loc[:, ["ReadingScore", "WritingScore"]] = (test_numeric - mean) / std
+    test_numeric = test_data.loc[:, ["ReadingScore"]]
+    test_data.loc[:, ["ReadingScore"]] = (test_numeric - mean) / std
     return train_data, test_data
 
 
