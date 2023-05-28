@@ -181,7 +181,7 @@ def preprocessing(data_path):
 
     data["MathGrade"] = pd.cut(
         data.MathScore,
-        data.MathScore.quantile([0, 0.04, 0.11, 0.23, 0.40, 0.60, 0.80, 0.89, 0.96, 1]),
+        data.MathScore.quantile([0, 0.04, 0.11, 0.23, 0.40, 0.60, 0.77, 0.89, 0.96, 1]),
         labels=[f"{i}" for i in range(9, 0, -1)],
     )
 
@@ -220,13 +220,3 @@ def preprocessing(data_path):
 
 if __name__ == "__main__":
     A = DM()
-    d = A.kfold_grid_serch(**A.models["LDA"])
-    start = time.time()
-    for k in A.models.keys():
-        A.kfold_grid_serch(**A.models[k])
-    end = time.time()
-
-    print(f"{end - start:.5f} sec")
-    # model = QuadraticDiscriminantAnalysis()
-    # data_path = "data/Expanded_data_with_more_features.csv"
-    # best_subset_selection(model, data_path, type="classification")
