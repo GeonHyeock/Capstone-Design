@@ -1,3 +1,4 @@
+# %%
 import pandas as pd
 import numpy as np
 from sklearn.discriminant_analysis import (
@@ -22,8 +23,13 @@ from sklearn.feature_selection import SelectFromModel
 
 import time
 import warnings
+import matplotlib.pyplot as plt
 
 warnings.filterwarnings(action="ignore")
+
+import os
+
+os.chdir("C:/Users/user/Desktop/Capstone-Design-Score-Prediction")
 
 
 class DM:
@@ -42,7 +48,7 @@ class DM:
                 "param": {"reg_param": list(np.linspace(0.0, 1.0, 11, endpoint=True))},
                 "type": "classification",
             },
-            "Logistic Regression": {
+            "Logistic Classification": {
                 "model": LogisticRegression(),
                 "param": {
                     "penalty": ["l1", "l2", "elasticnet", "none"],
@@ -54,19 +60,10 @@ class DM:
             "Tree": {
                 "model": DecisionTreeClassifier(),
                 "param": {
-                    "max_depth": [3, 5, 7, 10, 15],
+                    "max_depth": [3, 5, 7, 10],
                     "min_samples_leaf": [3, 5, 10, 15, 20],
-                    "min_samples_split": [8, 10, 12, 18, 20, 16],
-                    "criterion": ["gini", "entropy"],
-                },
-                "type": "classification",
-            },
-            "SVC": {
-                "model": SVC(),
-                "param": {
-                    "C": [0.1, 1, 10, 100],
-                    "gamma": [1, 0.1, 0.01, 0.001],
-                    "kernel": ["rbf", "poly", "sigmoid"],
+                    "min_samples_split": [8, 10, 12, 16, 18, 20],
+                    "criterion": ["gini"],
                 },
                 "type": "classification",
             },
@@ -89,19 +86,11 @@ class DM:
                 "model": ElasticNet(),
                 "param": {
                     "alpha": [1e-4, 1e-3, 1e-2, 1e-1, 0.0, 1.0, 10.0, 100.0],
-                    "l1_ratio": list(np.arange(0, 1, 0.01)),
                 },
                 "type": "regression",
             },
             "PLS": {
                 "model": PLSRegression(),
-                "param": {"n_components": list(range(1, 10))},
-                "type": "regression",
-            },
-            "PCR": {
-                "model": Pipeline(
-                    steps=[("pca", PCA()), ("regression", LinearRegression())]
-                ),
                 "param": {"n_components": list(range(1, 10))},
                 "type": "regression",
             },
@@ -132,11 +121,13 @@ class DM:
         target = "MathGrade" if type == "classification" else "MathScore"
 
         features_name = [
-            col for col in self.train.columns if col not in ["MathGrade", "MathScore"]
+            col
+            for col in self.train_data.columns
+            if col not in ["MathGrade", "MathScore"]
         ]
 
-        X_train = self.train[features_name].to_numpy()
-        y_train = self.train[target].to_numpy()
+        X_train = self.train_data[features_name].to_numpy()
+        y_train = self.train_data[target].to_numpy()
 
         selector = SelectFromModel(estimator=model, threshold="median").fit(
             X_train, y_train
@@ -221,13 +212,43 @@ def preprocessing(data_path):
 
 if __name__ == "__main__":
     A = DM()
-    d = A.kfold_grid_serch(**A.models["LDA"])
-    start = time.time()
-    for k in A.models.keys():
-        A.kfold_grid_serch(**A.models[k])
-    end = time.time()
+    explained_variance_ratio = []
+    data = A.train_data
+    data = data.drop(["MathGrade", "MathScore"], axis=1)
 
-    print(f"{end - start:.5f} sec")
-    # model = QuadraticDiscriminantAnalysis()
-    # data_path = "data/Expanded_data_with_more_features.csv"
-    # best_subset_selection(model, data_path, type="classification")
+    for i in range(1, 29):
+        model = PCA(n_components=i)
+        model.fit(data)
+        explained_variance_ratio.append(round(sum(model.explained_variance_ratio_), 3))
+
+    print(explained_variance_ratio)
+
+    plt.figure()
+    plt.plot(explained_variance_ratio, color="blue")
+    plt.xticks(list(range(1, 29)))
+    plt.axvline(x=18, color="orange")
+    plt.xlabel("n_components")
+    plt.title("PCA")
+    plt.ylabel("explained_variance_ratio")
+    plt.show()
+
+    df = pd.DataFrame(model.components_, columns=data.columns)
+    df.T.to_csv("PCA.csv")
+    print(f"주성분 : \n{df.T.iloc[:,-1]}")
+    print("-" * 80)
+
+    # d = A.kfold_grid_serch(**A.models["LDA"])
+    # start = time.time()
+    # for k in A.models.keys():
+    #     A.kfold_grid_serch(**A.models[k])
+    # end = time.time()
+
+    # print(f"{end - start:.5f} sec")
+    # # model = QuadraticDiscriminantAnalysis()
+    # # data_path = "data/Expanded_data_with_more_features.csv"
+    # for k in A.models.keys():
+    #     print("-" * 80)
+    #     print(k)
+    #     A.best_subset_selection(A.models[k]["model"], A.models[k]["type"])
+
+# %%
