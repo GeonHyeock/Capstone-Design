@@ -39,7 +39,7 @@ class DM:
             },
             "QDA": {
                 "model": QuadraticDiscriminantAnalysis(),
-                "param": {"reg_param": list(np.linspace(0.0, 1.0, 11, endpoint=True))},
+                "param": {"reg_param": [i * 0.1 for i in range(1, 10)]},
                 "type": "classification",
             },
             "Logistic Regression": {
@@ -54,19 +54,10 @@ class DM:
             "Tree": {
                 "model": DecisionTreeClassifier(),
                 "param": {
-                    "max_depth": [3, 5, 7, 10, 15],
+                    "max_depth": [3, 5, 7, 10],
                     "min_samples_leaf": [3, 5, 10, 15, 20],
-                    "min_samples_split": [8, 10, 12, 18, 20, 16],
-                    "criterion": ["gini", "entropy"],
-                },
-                "type": "classification",
-            },
-            "SVC": {
-                "model": SVC(),
-                "param": {
-                    "C": [0.1, 1, 10, 100],
-                    "gamma": [1, 0.1, 0.01, 0.001],
-                    "kernel": ["rbf", "poly", "sigmoid"],
+                    "min_samples_split": [8, 10, 12, 16, 18, 20],
+                    "criterion": ["gini"],
                 },
                 "type": "classification",
             },
@@ -77,20 +68,12 @@ class DM:
             },
             "Ridge": {
                 "model": Ridge(),
-                "param": {"alpha": list(np.arange(0, 1, 0.01))},
+                "param": {"alpha": list(np.arange(0, 10, 0.05))},
                 "type": "regression",
             },
             "LASSO": {
                 "model": Lasso(),
-                "param": {"alpha": list(np.arange(0, 1, 0.01))},
-                "type": "regression",
-            },
-            "ElasticNet": {
-                "model": ElasticNet(),
-                "param": {
-                    "alpha": [1e-4, 1e-3, 1e-2, 1e-1, 0.0, 1.0, 10.0, 100.0],
-                    "l1_ratio": list(np.arange(0, 1, 0.01)),
-                },
+                "param": {"alpha": list(np.arange(0, 10, 0.05))},
                 "type": "regression",
             },
             "PLS": {
@@ -98,22 +81,18 @@ class DM:
                 "param": {"n_components": list(range(1, 10))},
                 "type": "regression",
             },
-            "PCR": {
-                "model": Pipeline(
-                    steps=[("pca", PCA()), ("regression", LinearRegression())]
-                ),
-                "param": {"n_components": list(range(1, 10))},
-                "type": "regression",
-            },
         }
 
     def kfold_grid_serch(self, model, param, type="classification"):
+        np.random.seed(42)
         target = "MathGrade" if type == "classification" else "MathScore"
+        my_drop = ["MathGrade", "MathScore"]
+
         if param:
             # max_iter가 충분하지 않아 결과가 수렴하지 않아서 ConvergenceWarning 발생
             grid = GridSearchCV(model, param, cv=5, return_train_score=True)
             grid.fit(
-                self.train_data.drop(["MathGrade", "MathScore"], axis=1),
+                self.train_data.drop(my_drop, axis=1),
                 self.train_data[target],
             )
             return {
@@ -123,7 +102,7 @@ class DM:
             }
         else:
             model.fit(
-                self.train_data.drop(["MathGrade", "MathScore"], axis=1),
+                self.train_data.drop(my_drop, axis=1),
                 self.train_data[target],
             )
             return {"model": model}
@@ -183,7 +162,7 @@ def preprocessing(data_path):
 
     data["MathGrade"] = pd.cut(
         data.MathScore,
-        data.MathScore.quantile([0, 0.04, 0.11, 0.23, 0.40, 0.60, 0.88, 0.89, 0.96, 1]),
+        data.MathScore.quantile([0, 0.04, 0.11, 0.23, 0.40, 0.60, 0.80, 0.89, 0.96, 1]),
         labels=[f"{i}" for i in range(9, 0, -1)],
     )
 
@@ -206,6 +185,7 @@ def preprocessing(data_path):
         axis=1,
         inplace=True,
     )
+    data["ReadingScore2"] = data["ReadingScore"] ** 2
 
     train_data = data.sample(frac=0.8, random_state=42)
     train_numeric = train_data.loc[:, ["ReadingScore"]]
@@ -221,13 +201,3 @@ def preprocessing(data_path):
 
 if __name__ == "__main__":
     A = DM()
-    d = A.kfold_grid_serch(**A.models["LDA"])
-    start = time.time()
-    for k in A.models.keys():
-        A.kfold_grid_serch(**A.models[k])
-    end = time.time()
-
-    print(f"{end - start:.5f} sec")
-    # model = QuadraticDiscriminantAnalysis()
-    # data_path = "data/Expanded_data_with_more_features.csv"
-    # best_subset_selection(model, data_path, type="classification")
