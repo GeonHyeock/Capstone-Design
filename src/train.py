@@ -10,6 +10,7 @@ def metric(model, type):
     if type == "classification":
         target = dm.test_data["MathGrade"]
         return confusion_matrix(target, predict)
+
     elif type == "regression":
         target = dm.test_data["MathScore"]
         if isinstance(predict, np.ndarray) and len(predict.shape) > 1:
@@ -19,10 +20,12 @@ def metric(model, type):
 
 if __name__ == "__main__":
     dm, result = DM(), {}
-    for k, v in dm.models.items():
+    for idx, value in enumerate(dm.models.items()):
+        print(f"{idx}/{len(dm.models.items())}")
+        k, v = value
         kfold = dm.kfold_grid_serch(**v)
         my_metric = metric(kfold["model"], v["type"])
         result[k] = {**kfold, "metric": my_metric}
 
-    with open("result.pickle", "wb") as data:
+    with open("result4.pickle", "wb") as data:
         pickle.dump(result, data)
