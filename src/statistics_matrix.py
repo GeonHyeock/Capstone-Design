@@ -69,11 +69,11 @@ def get_statistics(model, intercept=0, coef=[], train_df=None, target_df=None):
 
 
 if __name__ == "__main__":
-    with open("./result_reg.pickle", "rb") as fr:
+    with open("./result.pickle", "rb") as fr:
         result = pickle.load(fr)
 
     m = [result[k]["model"] for k in result.keys()]
-    for k in ["LinearRegression", "Ridge", "LASSO", "Logistic Classification"]:
+    for k in ["LinearRegression", "Ridge", "LASSO", "PLS"]:
         lm = result[k]["model"]
         X_test, target, predict = result[k]["metric"]
         statistics = get_statistics(
