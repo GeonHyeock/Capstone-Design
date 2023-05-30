@@ -27,9 +27,6 @@ if __name__ == "__main__":
     start = time.time()
 
     for k, v in tqdm(dm.models.items()):
-        print(k)
-        if k not in ["Logistic Regression", "LinearRegression", "Ridge", "LASSO"]:
-            continue
         kfold = dm.kfold_grid_serch(**v)
         my_metric = metric(kfold["model"], v["type"])
         result[k] = {**kfold, "metric": my_metric}
@@ -38,5 +35,5 @@ if __name__ == "__main__":
 
     print(f"{end - start:.5f} sec")
 
-    with open("result_reg.pickle", "wb") as data:
+    with open("result.pickle", "wb") as data:
         pickle.dump(result, data)
