@@ -111,7 +111,7 @@ def regression_result(result):
 if __name__ == "__main__":
     plt.rcParams["font.family"] = "AppleGothic"
     my_dm = DM()
-    with open("./result_no_expension.pickle", "rb") as fr:
+    with open("./result.pickle", "rb") as fr:
         result = pickle.load(fr)
 
     EDA("data/Expanded_data_with_more_features.csv")
