@@ -1,4 +1,3 @@
-# %%
 import pandas as pd
 import numpy as np
 from sklearn.discriminant_analysis import (
@@ -26,10 +25,6 @@ import warnings
 import matplotlib.pyplot as plt
 
 warnings.filterwarnings(action="ignore")
-
-import os
-
-os.chdir("C:/Users/user/Desktop/Capstone-Design-Score-Prediction")
 
 
 class DM:
@@ -61,10 +56,7 @@ class DM:
                 "model": DecisionTreeClassifier(),
                 "param": {
                     "max_depth": [3, 5, 7, 10],
-                    "max_depth": [3, 5, 7, 10],
                     "min_samples_leaf": [3, 5, 10, 15, 20],
-                    "min_samples_split": [8, 10, 12, 16, 18, 20],
-                    "criterion": ["gini"],
                     "min_samples_split": [8, 10, 12, 16, 18, 20],
                     "criterion": ["gini"],
                 },
@@ -82,15 +74,7 @@ class DM:
             },
             "LASSO": {
                 "model": Lasso(),
-                "param": {"alpha": list(np.arange(0, 1, 0.01))},
-                "type": "regression",
-            },
-            "ElasticNet": {
-                "model": ElasticNet(),
-                "param": {
-                    "alpha": [1e-4, 1e-3, 1e-2, 1e-1, 0.0, 1.0, 10.0, 100.0],
-                    "l1_ratio": list(np.arange(0, 1, 0.01)),
-                },
+                "param": {"alpha": list(np.arange(0, 10, 0.05))},
                 "type": "regression",
             },
             "PLS": {
@@ -204,7 +188,6 @@ def preprocessing(data_path):
         axis=1,
         inplace=True,
     )
-    data["ReadingScore2"] = data["ReadingScore"] ** 2
 
     train_data = data.sample(frac=0.8, random_state=42)
     train_numeric = train_data.loc[:, ["ReadingScore"]]
