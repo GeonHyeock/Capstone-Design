@@ -40,7 +40,7 @@ class DM:
             },
             "QDA": {
                 "model": QuadraticDiscriminantAnalysis(),
-                "param": {"reg_param": [i * 0.1 for i in range(1, 10)]},
+                "param": {"reg_param": [i * 0.1 for i in range(0, 10)]},
                 "type": "classification",
             },
             "Logistic Classification": {
