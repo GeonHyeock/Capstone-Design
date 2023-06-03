@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from model import DM
 import statsmodels.api as sm
 from itertools import combinations
+from matplotlib import rc
 from scipy.stats import probplot
 from scipy.stats import shapiro
 
@@ -94,6 +95,19 @@ def regression_result(result):
         data = result[col]
         _, b, c = data["metric"]
         print(f"{col} : {np.sqrt(((b-c)**2).mean()):.4f}")
+        print(
+            f"{col}결정계수 : {data['model'].score(my_dm.test_data.drop(['MathScore','MathGrade'], axis=1),b):.4f}"
+        )
+        sns.scatterplot(b - c, alpha=0.5, s=20)
+        plt.title(f"{col}의 잔차")
+        plt.savefig(f"./images/{col}_잔차.png")
+        plt.clf()
+
+        probplot(b - c, plot=plt)
+        plt.title(f"{col}의 잔차_qqplot")
+        plt.savefig(f"./images/{col}잔차_qqplot.png")
+        plt.clf()
+
         if col in ["Ridge", "LASSO", "PLS"]:
             print(f"{col} : {data['best_param']}")
             param = "param_n_components" if col == "PLS" else "param_alpha"
@@ -109,7 +123,9 @@ def regression_result(result):
 
 
 if __name__ == "__main__":
-    plt.rcParams["font.family"] = "AppleGothic"
+    rc("font", family="AppleGothic")
+    plt.rcParams["axes.unicode_minus"] = False
+
     my_dm = DM()
     with open("./result.pickle", "rb") as fr:
         result = pickle.load(fr)
